@@ -20,6 +20,28 @@ let savedExamples = [];
 let showSaveDialog = false;
 let saveLabel = "";
 
+// Device detection
+let isTouchDevice = false;
+
+// Function to detect touch devices
+function detectTouchDevice() {
+  // Check for touch capability
+  const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+  // Check for mobile/tablet using user agent (more reliable for actual mobile devices)
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
+  // Check for pointer: coarse (touch devices)
+  const hasCoarsePointer =
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+  // Consider it a touch device if any of these conditions are true
+  return hasTouch && (isMobile || hasCoarsePointer);
+}
+
 // Formül kategorileri ve formüller
 const FORMULA_CATEGORIES = [
   {
@@ -109,7 +131,7 @@ const defaultExamples = [
   {
     id: "default-1",
     name: "Your Formula",
-    latex: String.raw`\sum_{n=1}^{\infty}\frac{1}{n^2}=\frac{\pi^2}{6}\text{ değerinin 3 e bölümünden kalan son değeri \underline{tam olarak nedir?} `,
+    latex: String.raw`\sum_{n=1}^{\infty}\frac{1}{n^2}=\frac{\pi^2}{6}\text{ değerinin 3 e bölümünden kalan son değeri \underline{tam olarak nedir?}}`,
   },
   {
     id: "default-2",
@@ -260,7 +282,7 @@ async function exportAsPNG(mathOnly = false) {
       }
       .katex .mfrac {
         display: inline-block;
-        vertical-align: 0.5em;
+        
       }
       .katex .sqrt {
         display: inline-block;
@@ -339,25 +361,28 @@ function handleModeChange(newMode) {
 
   if (mathFieldElement) {
     try {
+      // Determine virtual keyboard mode based on device type
+      const vkMode = isTouchDevice ? "onfocus" : "manual";
+
       // Use MathLive's proper mode switching API
       if (newMode === "text") {
         mathFieldElement.defaultMode = "text";
         mathFieldElement.setOptions({
-          virtualKeyboardMode: "manual",
+          virtualKeyboardMode: vkMode,
           smartFence: false,
           smartMode: false,
         });
       } else if (newMode === "latex") {
         mathFieldElement.defaultMode = "math";
         mathFieldElement.setOptions({
-          virtualKeyboardMode: "manual",
+          virtualKeyboardMode: vkMode,
           smartFence: true,
           smartMode: true,
         });
       } else if (newMode === "math") {
         mathFieldElement.defaultMode = "math";
         mathFieldElement.setOptions({
-          virtualKeyboardMode: "onfocus",
+          virtualKeyboardMode: vkMode,
           smartFence: true,
           smartMode: true,
         });
@@ -517,26 +542,6 @@ function deleteExample(id) {
   savedExamples = savedExamples.filter((example) => example.id !== id);
 
   // Examples menu will be refreshed automatically when opened
-}
-
-// Clear localStorage and reset
-function clearLocalStorage() {
-  localStorage.removeItem("latexEditorValue");
-
-  const defaultLatex = convertToLatexValue(
-    String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\text{ formülünün sonucu \underline{tam say\i} değeri olarak nedir?}`
-  );
-
-  if (mathFieldElement) {
-    try {
-      mathFieldElement.value = defaultLatex;
-    } catch (error) {
-      console.error("Error setting default value:", error);
-    }
-  }
-
-  latexValue = defaultLatex;
-  updateLatexOutput();
 }
 
 // KaTeX Preview Functions (converted from KaTeXPreview.js React component)
@@ -838,9 +843,8 @@ function selectExample(exampleId) {
         mathFieldElement.insert(selectedExample.latex);
       }
 
-      // Update global variable and storage
+      // Update global variable
       latexValue = selectedExample.latex;
-      localStorage.setItem("latexEditorValue", selectedExample.latex);
 
       // Manually trigger input event to ensure all handlers are called
       const inputEvent = new Event("input", { bubbles: true });
@@ -911,20 +915,33 @@ function insertFormula(latex) {
 
 // Initialization function with programmatic MathfieldElement creation
 function initializeMathLive() {
+  // Detect device type first
+  isTouchDevice = detectTouchDevice();
+  console.log(
+    `Device detection: ${
+      isTouchDevice
+        ? "Touch Device (Mobile/Tablet)"
+        : "Non-Touch Device (Desktop)"
+    }`
+  );
+
   // Create MathfieldElement programmatically
   mathFieldElement = new MathfieldElement();
+
+  // Determine virtual keyboard mode based on device type
+  const vkMode = isTouchDevice ? "onfocus" : "manual";
 
   // Configure the mathfield with options based on current mode
   if (currentMode === "text") {
     mathFieldElement.setOptions({
-      virtualKeyboardMode: "manual",
+      virtualKeyboardMode: vkMode,
       smartFence: false,
       smartMode: false,
       defaultMode: "text",
     });
   } else if (currentMode === "latex") {
     mathFieldElement.setOptions({
-      virtualKeyboardMode: "manual",
+      virtualKeyboardMode: vkMode,
       smartFence: true,
       smartMode: true,
       defaultMode: "math",
@@ -932,7 +949,7 @@ function initializeMathLive() {
   } else {
     // math mode (default)
     mathFieldElement.setOptions({
-      virtualKeyboardMode: "onfocus",
+      virtualKeyboardMode: vkMode,
       smartFence: true,
       smartMode: true,
       defaultMode: "math",
@@ -953,17 +970,10 @@ function initializeMathLive() {
     return;
   }
 
-  // Load initial value from localStorage or use default
-  let initialLatex;
-  const savedLatex = localStorage.getItem("latexEditorValue");
-
-  if (savedLatex && savedLatex.trim()) {
-    initialLatex = convertToLatexValue(savedLatex);
-  } else {
-    initialLatex = convertToLatexValue(
-      String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\text{ formülünün sonucu \underline{tam say\i} değeri olarak nedir?}`
-    );
-  }
+  // Use default initial value
+  const initialLatex = convertToLatexValue(
+    String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\text{ formülünün sonucu \underline{tam say\i} değeri olarak nedir?}`
+  );
 
   // Set initial value
   try {
@@ -980,10 +990,6 @@ function initializeMathLive() {
     try {
       // Get value from MathLive element
       latexValue = mathFieldElement.value || "";
-
-      if (latexValue.trim()) {
-        localStorage.setItem("latexEditorValue", latexValue);
-      }
 
       updateLatexOutput();
 
@@ -1062,6 +1068,24 @@ function initializeMathLive() {
 
   // Initialize mode buttons to reflect current mode
   updateModeButtons();
+
+  // Add manual virtual keyboard control for desktop devices
+  if (!isTouchDevice) {
+    // Listen for virtual keyboard toggle button clicks on desktop
+    mathFieldElement.addEventListener("virtual-keyboard-toggle", () => {
+      try {
+        if (window.mathVirtualKeyboard) {
+          if (window.mathVirtualKeyboard.visible) {
+            window.mathVirtualKeyboard.hide();
+          } else {
+            window.mathVirtualKeyboard.show();
+          }
+        }
+      } catch (error) {
+        console.warn("Could not toggle virtual keyboard:", error);
+      }
+    });
+  }
 }
 
 // Event handlers setup
@@ -1096,9 +1120,7 @@ function setupEventHandlers() {
   document
     .getElementById("formula-btn")
     ?.addEventListener("click", () => toggleMenu("formula"));
-  document
-    .getElementById("clear-btn")
-    ?.addEventListener("click", clearLocalStorage);
+
   document
     .getElementById("export-full-btn")
     ?.addEventListener("click", () => exportAsPNG(false));
@@ -1115,10 +1137,6 @@ function setupEventHandlers() {
       const newValue = e.target.value;
       const processedValue = newValue.replace(/\$\$/g, "").trim();
       latexValue = processedValue;
-
-      if (processedValue.trim()) {
-        localStorage.setItem("latexEditorValue", processedValue);
-      }
 
       if (mathFieldElement) {
         try {

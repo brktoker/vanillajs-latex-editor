@@ -24,15 +24,96 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <link rel="stylesheet" href="style.css" />
+
+    <style>
+      /* Hide virtual keyboard toggle on touch devices (mobile/tablet) */
+      @media (pointer: coarse) {
+        math-field::part(virtual-keyboard-toggle) {
+          display: none !important;
+        }
+      }
+
+      /* Show virtual keyboard toggle on non-touch devices (desktop) */
+      @media (pointer: fine) {
+        math-field::part(virtual-keyboard-toggle) {
+          display: flex;
+        }
+      }
+
+      .katex-display > .katex {
+        font-size: 0.9rem !important;
+        text-align: start !important;
+      }
+
+      .katex-display {
+        max-width: 100%;
+        padding: 0.5rem;
+      }
+
+      .katex {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+      }
+
+      .katex-html {
+        max-width: 100%;
+        white-space: pre-wrap !important;
+      }
+
+      .katex .base {
+        white-space: normal !important;
+        display: inline !important;
+      }
+
+      .katex .mord,
+      .katex .mbin,
+      .katex .mrel,
+      .katex .mopen,
+      .katex .mclose,
+      .katex .mpunct {
+        display: inline-block !important;
+        white-space: normal !important;
+      }
+    </style>
   </head>
   <body>
-    <div class="min-h-screen bg-gray-50 py-8">
-      <div class="max-w-6xl mx-auto px-4 space-y-8">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b fixed top-0 left-0 right-0 z-[999]">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-gray-900">LaTeX Math Tools</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a
+              href="index.html"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors duration-200"
+            >
+              📝 LaTeX Editor
+            </a>
+            <a
+              href="geogebra.html"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              🎯 GeoGebra
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content with top padding for fixed navbar -->
+    <div class="min-h-screen bg-gray-50 pt-16">
+      <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
         <!-- Header -->
         <div class="text-center mb-8">
           <h1 class="text-4xl font-bold text-gray-900 mb-2">
             LaTeX Math Editor
           </h1>
+          <p class="text-lg text-gray-600">
+            Matematik formüllerinizi oluşturun, düzenleyin ve görselleştirin
+          </p>
         </div>
 
         <!-- LaTeX Editor Section -->
@@ -41,10 +122,12 @@
 
           <!-- Toolbar -->
           <div
-            class="mb-4 flex items-center justify-between bg-white border border-gray-200 rounded-lg p-2"
+            class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 bg-white border border-gray-200 rounded-lg p-2"
           >
             <!-- Mode Buttons -->
-            <div class="flex items-center space-x-1">
+            <div
+              class="flex items-center justify-center flex-wrap gap-2 md:justify-start space-x-1 col-span-1"
+            >
               <button
                 id="text-mode-btn"
                 class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
@@ -66,7 +149,9 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center space-x-1">
+            <div
+              class="flex items-center justify-center flex-wrap gap-2 md:justify-end space-x-1 col-span-2"
+            >
               <button
                 id="save-btn"
                 class="px-3 py-1 text-sm border rounded hover:bg-green-100 text-green-600"
@@ -161,19 +246,12 @@
               >
                 Redo
               </button>
-              <button
-                id="clear-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-red-100 text-red-600"
-              >
-                Clear Storage
-              </button>
             </div>
           </div>
 
           <!-- Math Field -->
           <math-field
             id="math-field"
-            virtual-keyboard-mode="onfocus"
             smart-fence="true"
             smart-mode="true"
             class="w-full min-h-[80px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
