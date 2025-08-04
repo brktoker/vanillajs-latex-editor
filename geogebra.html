@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Geometri Editörü - GeoGebra</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      /* Full height container styling */
+      .geo-container {
+        width: 100%;
+        height: calc(100vh - 64px); /* Subtract navigation height */
+        border: none;
+        background: white;
+      }
+
+      /* Loading animation */
+      .loading-spinner {
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Error message styling */
+      .error-message {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee3e2 100%);
+        border: 2px solid #f87171;
+      }
+
+      /* Navigation active state */
+      .nav-active {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+      }
+
+      /* GeoGebra applet styling */
+      #ggb-applet {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      /* Fixed layout - no scroll */
+      body {
+        overflow: hidden;
+        height: 100vh;
+      }
+
+      /* Main content area */
+      .main-content {
+        height: calc(100vh - 64px); /* Subtract navigation height */
+        margin-top: 64px; /* Add margin to account for fixed navbar */
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* GeoGebra container - takes remaining space */
+      .geogebra-section {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Status bar - fixed at bottom */
+      .status-section {
+        flex-shrink: 0;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      /* Ensure modals are above everything */
+      .modal-overlay {
+        z-index: 9999;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b fixed top-0 left-0 right-0 z-[999]">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-gray-900">Geometric Tools</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a
+              href="index.html"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              📝 LaTeX Editor
+            </a>
+            <a
+              href="geogebra.html"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg"
+            >
+              🎯 GeoGebra
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- GeoGebra Section -->
+      <div class="geogebra-section">
+        <!-- Loading Screen -->
+        <div
+          id="loading-screen"
+          class="absolute inset-0 bg-white flex items-center justify-center z-10"
+        >
+          <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">
+              GeoGebra Yükleniyor...
+            </h3>
+            <p class="text-gray-500">Dinamik geometri editörü hazırlanıyor</p>
+          </div>
+        </div>
+
+        <!-- GeoGebra Container -->
+        <div id="geogebra-container" class="h-full hidden">
+          <div id="ggb-applet" class="h-full"></div>
+        </div>
+      </div>
+
+      <!-- Status Section -->
+      <div class="status-section">
+        <div class="max-w-6xl mx-auto">
+          <div class="flex justify-between items-center text-sm text-gray-600">
+            <span id="status-text">Hazır</span>
+            <span id="coordinates">(0, 0)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div
+      id="help-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-white rounded-xl p-8 max-w-lg w-full mx-4 max-h-[80vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-800">
+            🎯 GeoGebra Yardımı
+          </h3>
+          <button
+            id="close-help"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+        <div class="space-y-4 text-gray-700">
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-2">🎯 GeoGebra Nedir?</h4>
+            <p class="text-sm">
+              GeoGebra, matematik ve fen bilimleri için geliştirilmiş dinamik
+              bir yazılımdır. Geometri, cebir, istatistik, hesap ve 3D
+              görselleştirme konularını tek platformda birleştirir. Öğrenciler
+              ve öğretmenler için ideal olan bu araç, interaktif matematik
+              deneyimleri oluşturmanızı sağlar.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-2">🖱️ Temel Kullanım</h4>
+            <ul class="text-sm space-y-1 list-disc list-inside">
+              <li>
+                <strong>Sol Panel:</strong> Geometri araçlarını seçin (nokta,
+                çizgi, daire, vb.)
+              </li>
+              <li>
+                <strong>Çizim Alanı:</strong> Tıklayarak şekiller oluşturun ve
+                sürükleyerek hareket ettirin
+              </li>
+              <li>
+                <strong>Sağ Panel:</strong> Cebir panelinden denklemler girin ve
+                grafikleri görün
+              </li>
+              <li>
+                <strong>Sağ Tık:</strong> Nesnelerin özelliklerini düzenleyin
+              </li>
+              <li>
+                <strong>Zoom:</strong> Fare tekerleği ile
+                yakınlaştırın/uzaklaştırın
+              </li>
+              <li>
+                <strong>Kaydetme:</strong> Çalışmanızı .ggb dosyası olarak
+                kaydedin
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-2">💡 İpuçları</h4>
+            <ul class="text-sm space-y-1 list-disc list-inside">
+              <li>
+                <strong>Tam Ekran:</strong> Yeşil tam ekran butonunu kullanın
+              </li>
+              <li>
+                <strong>Yenileme:</strong> Mor yenile butonu ile sayfayı
+                yenileyin
+              </li>
+              <li>
+                <strong>Geri Alma:</strong> Ctrl+Z ile son işlemi geri alın
+              </li>
+              <li>
+                <strong>Koordinatlar:</strong> Alt kısımda fare koordinatlarını
+                görün
+              </li>
+              <li>
+                <strong>Ayarlar:</strong> Sağ alt köşedeki ⚙️ butonu ile
+                özelleştirin
+              </li>
+              <li>
+                <strong>Yardım:</strong> F1 tuşu ile bu yardım penceresini açın
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-2">🔧 Özellikler</h4>
+            <ul class="text-sm space-y-1 list-disc list-inside">
+              <li>
+                <strong>Dinamik Geometri:</strong> Şekilleri sürükleyerek
+                değiştirin
+              </li>
+              <li>
+                <strong>Cebir Entegrasyonu:</strong> Denklemler ve grafikler
+              </li>
+              <li>
+                <strong>Geometrik Araçlar:</strong> Nokta, çizgi, daire, açı
+                çizimi
+              </li>
+              <li>
+                <strong>Ölçüm Araçları:</strong> Uzunluk, açı, alan hesaplama
+              </li>
+              <li><strong>Dönüşümler:</strong> Yansıma, döndürme, öteleme</li>
+              <li>
+                <strong>Dışa Aktarma:</strong> PNG, PDF, HTML formatlarında
+                kaydetme
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-center">
+          <button
+            id="close-help-btn"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+          >
+            Anladım
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Button -->
+    <button
+      id="settings-btn"
+      class="fixed bottom-6 right-6 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all duration-200 hover:scale-110 flex items-center justify-center z-[9999]"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+        ></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        ></path>
+      </svg>
+    </button>
+
+    <!-- Help Button -->
+    <button
+      id="help-btn"
+      class="fixed bottom-6 right-20 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110 flex items-center justify-center z-[9999]"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        ></path>
+      </svg>
+    </button>
+
+    <!-- Settings Modal -->
+    <div
+      id="settings-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999] hidden"
+    >
+      <div
+        class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-800">
+            ⚙️ GeoGebra Ayarları
+          </h3>
+          <button
+            id="close-settings"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="space-y-6">
+          <!-- App Type Selection -->
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-3">📱 Uygulama Türü</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <label
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                <input
+                  type="radio"
+                  name="appType"
+                  value="classic"
+                  class="mr-2"
+                />
+                <div>
+                  <span class="text-sm font-medium">Classic (Klasik)</span>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Tam özellikli matematik editörü. Geometri, cebir, hesap ve
+                    istatistik araçları.
+                  </p>
+                </div>
+              </label>
+              <label
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                <input
+                  type="radio"
+                  name="appType"
+                  value="geometry"
+                  checked
+                  class="mr-2"
+                />
+                <div>
+                  <span class="text-sm font-medium">Geometry (Geometri)</span>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Sadece geometri odaklı. Çizim ve ölçüm araçları ile dinamik
+                    geometri.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Menu Settings -->
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-3">🎛️ Menü Ayarları</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex items-center p-2">
+                <input type="checkbox" id="showToolBar" checked class="mr-2" />
+                <span class="text-sm">Araç Çubuğu</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input type="checkbox" id="showMenuBar" checked class="mr-2" />
+                <span class="text-sm">Menü Çubuğu</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input
+                  type="checkbox"
+                  id="showAlgebraInput"
+                  checked
+                  class="mr-2"
+                />
+                <span class="text-sm">Cebir Girişi</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input
+                  type="checkbox"
+                  id="showToolBarHelp"
+                  checked
+                  class="mr-2"
+                />
+                <span class="text-sm">Araç Yardımı</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input
+                  type="checkbox"
+                  id="showResetIcon"
+                  checked
+                  class="mr-2"
+                />
+                <span class="text-sm">Sıfırlama İkonu</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input
+                  type="checkbox"
+                  id="showAnimationButton"
+                  checked
+                  class="mr-2"
+                />
+                <span class="text-sm">Animasyon Butonu</span>
+              </label>
+              <label class="flex items-center p-2">
+                <input
+                  type="checkbox"
+                  id="showFullscreenButton"
+                  checked
+                  class="mr-2"
+                />
+                <span class="text-sm">Tam Ekran Butonu</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Language Settings -->
+          <div>
+            <h4 class="font-semibold text-gray-800 mb-3">🌐 Dil Ayarları</h4>
+            <select id="languageSelect" class="w-full p-2 border rounded-lg">
+              <option value="tr" selected>Türkçe</option>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="fr">Français</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end space-x-3">
+          <button
+            id="reset-settings"
+            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Varsayılana Döndür
+          </button>
+          <button
+            id="apply-settings"
+            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Uygula
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="geogebra.js"></script>
+  </body>
+</html>
