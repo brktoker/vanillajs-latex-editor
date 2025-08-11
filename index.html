@@ -1,366 +1,336 @@
 <!DOCTYPE html>
 <html lang="tr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>LaTeX Math Editor</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>LaTeX Math Editor</title>
 
-    <!-- MathLive will be imported as ES module in script.js -->
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- KaTeX CSS and JS -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <!-- MathLive will be imported as ES module in script.js -->
 
-    <!-- html2canvas for PNG export -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <!-- KaTeX CSS and JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
-    <link rel="stylesheet" href="style.css" />
+  <!-- html2canvas for PNG export -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-    <style>
-      /* Hide virtual keyboard toggle on touch devices (mobile/tablet) */
-      @media (pointer: coarse) {
-        math-field::part(virtual-keyboard-toggle) {
-          display: none !important;
-        }
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Hide virtual keyboard toggle on touch devices (mobile/tablet) */
+    @media (pointer: coarse) {
+      math-field::part(virtual-keyboard-toggle) {
+        display: none !important;
       }
+    }
 
-      /* Show virtual keyboard toggle on non-touch devices (desktop) */
-      @media (pointer: fine) {
-        math-field::part(virtual-keyboard-toggle) {
-          display: flex;
-        }
+    /* Show virtual keyboard toggle on non-touch devices (desktop) */
+    @media (pointer: fine) {
+      math-field::part(virtual-keyboard-toggle) {
+        display: flex;
       }
+    }
 
-      .katex-display > .katex {
-        font-size: 0.9rem !important;
-        text-align: start !important;
-      }
+    .katex-display>.katex {
+      font-size: 0.9rem !important;
+      text-align: start !important;
+    }
 
-      .katex-display {
-        max-width: 100%;
-        padding: 0.5rem;
-      }
+    .katex-display {
+      max-width: 100%;
+      padding: 0.5rem;
+    }
 
-      .katex {
-        white-space: normal !important;
-        word-wrap: break-word !important;
-        max-width: 100% !important;
-      }
+    .katex {
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      max-width: 100% !important;
+    }
 
-      .katex-html {
-        max-width: 100%;
-        white-space: pre-wrap !important;
-      }
+    .katex-html {
+      max-width: 100%;
+      white-space: pre-wrap !important;
+    }
 
-      .katex .base {
-        white-space: normal !important;
-        display: inline !important;
-      }
+    .katex .base {
+      white-space: normal !important;
+      display: inline !important;
+    }
 
-      .katex .mord,
-      .katex .mbin,
-      .katex .mrel,
-      .katex .mopen,
-      .katex .mclose,
-      .katex .mpunct {
-        display: inline-block !important;
-        white-space: normal !important;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg border-b fixed top-0 left-0 right-0 z-[999]">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center space-x-4">
-            <h1 class="text-xl font-bold text-gray-900">LaTeX Math Tools</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <a
-              href="index.html"
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors duration-200"
-            >
-              📝 LaTeX Editor
-            </a>
-            <a
-              href="geogebra.html"
-              class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-            >
-              🎯 GeoGebra
-            </a>
-          </div>
+    .katex .mord,
+    .katex .mbin,
+    .katex .mrel,
+    .katex .mopen,
+    .katex .mclose,
+    .katex .mpunct {
+      display: inline-block !important;
+      white-space: normal !important;
+    }
+
+    /* Custom tooltip styles */
+    [title] {
+      position: relative;
+      cursor: pointer;
+    }
+
+    /* Ensure tooltips are visible */
+    [title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Tooltip arrow */
+    [title]:hover::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 0.25rem solid transparent;
+      border-top-color: rgba(0, 0, 0, 0.8);
+      margin-bottom: 0.25rem;
+      z-index: 1000;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg border-b fixed top-0 left-0 right-0 z-[999]">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-xl font-bold text-gray-900">LaTeX Math Tools</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="index.html"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors duration-200">
+            📝 LaTeX Editor
+          </a>
+          <a href="geogebra.html"
+            class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+            🎯 GeoGebra
+          </a>
         </div>
       </div>
-    </nav>
+    </div>
+  </nav>
 
-    <!-- Main Content with top padding for fixed navbar -->
-    <div class="min-h-screen bg-gray-50 pt-16">
-      <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-          <h1 class="text-4xl font-bold text-gray-900 mb-2">
-            LaTeX Math Editor
-          </h1>
-          <p class="text-lg text-gray-600">
-            Matematik formüllerinizi oluşturun, düzenleyin ve görselleştirin
-          </p>
-        </div>
+  <!-- Main Content with top padding for fixed navbar -->
+  <div class="min-h-screen bg-gray-50 pt-16">
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+          LaTeX Math Editor
+        </h1>
+        <p class="text-lg text-gray-600">
+          Matematik formüllerinizi oluşturun, düzenleyin ve görselleştirin
+        </p>
+      </div>
 
-        <!-- LaTeX Editor Section -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">LaTeX Editor</h2>
+      <!-- LaTeX Editor Section -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">LaTeX Editor</h2>
 
-          <!-- Toolbar -->
-          <div
-            class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 bg-white border border-gray-200 rounded-lg p-2"
-          >
-            <!-- Mode Buttons -->
-            <div
-              class="flex items-center justify-center flex-wrap gap-2 md:justify-start space-x-1 col-span-1"
-            >
-              <button
-                id="text-mode-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-              >
-                Text
+        <!-- Toolbar -->
+        <div class="mb-4 grid grid-cols-1 lg:grid-cols-3 gap-2 bg-white border border-gray-200 rounded-lg p-2">
+          <!-- Mode Buttons -->
+          <div class="flex items-center justify-center flex-wrap gap-2 md:justify-start space-x-1 col-span-1">
+            <button id="text-mode-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+              title="Text Mode - Normal text editing">
+              📝
+            </button>
+            <button id="math-mode-btn"
+              class="px-3 py-1 text-sm border rounded bg-blue-100 text-blue-600 flex items-center justify-center"
+              title="Math Mode - Mathematical expression editing">
+              ∑
+            </button>
+            <button id="latex-mode-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+              title="LaTeX Mode - LaTeX code editing">
+              𝒳
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-center flex-wrap gap-2 md:justify-end space-x-1 col-span-2">
+            <button id="save-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-green-100 text-green-600 flex items-center justify-center"
+              title="Save Example - Save current formula as an example">
+              💾
+            </button>
+            <div class="relative">
+              <button id="examples-btn"
+                class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+                title="Saved Examples - Browse saved and default examples">
+                📚
               </button>
-              <button
-                id="math-mode-btn"
-                class="px-3 py-1 text-sm border rounded bg-blue-100 text-blue-600"
-              >
-                Math
-              </button>
-              <button
-                id="latex-mode-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-              >
-                LaTeX
-              </button>
-            </div>
+              <div id="examples-menu"
+                class="menu-dropdown hidden absolute z-10 top-full mt-2 left-0 w-72 bg-white rounded-lg shadow-lg border border-gray-200">
+                <div class="max-h-[400px] overflow-y-auto">
+                  <!-- Saved Examples Section -->
+                  <div id="saved-examples-section"
+                    class="sticky top-0 z-10 bg-gradient-to-r from-green-50 to-white px-4 py-2 border-b border-gray-200">
+                    <div class="font-semibold text-sm text-green-800">
+                      Saved Examples
+                    </div>
+                  </div>
+                  <div id="saved-examples-list" class="py-1">
+                    <!-- Saved examples will be populated by JavaScript -->
+                  </div>
 
-            <!-- Action Buttons -->
-            <div
-              class="flex items-center justify-center flex-wrap gap-2 md:justify-end space-x-1 col-span-2"
-            >
-              <button
-                id="save-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-green-100 text-green-600"
-              >
-                Save Example
-              </button>
-              <div class="relative">
-                <button
-                  id="examples-btn"
-                  class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-                >
-                  Saved Examples
-                </button>
-                <div
-                  id="examples-menu"
-                  class="menu-dropdown hidden absolute z-10 top-full mt-2 left-0 w-72 bg-white rounded-lg shadow-lg border border-gray-200"
-                >
-                  <div class="max-h-[400px] overflow-y-auto">
-                    <!-- Saved Examples Section -->
-                    <div
-                      id="saved-examples-section"
-                      class="sticky top-0 z-10 bg-gradient-to-r from-green-50 to-white px-4 py-2 border-b border-gray-200"
-                    >
-                      <div class="font-semibold text-sm text-green-800">
-                        Saved Examples
-                      </div>
-                    </div>
-                    <div id="saved-examples-list" class="py-1">
-                      <!-- Saved examples will be populated by JavaScript -->
-                    </div>
+                  <!-- Separator between saved and default -->
+                  <div id="examples-separator" class="border-b border-gray-100 mx-4" style="display: none"></div>
 
-                    <!-- Separator between saved and default -->
-                    <div
-                      id="examples-separator"
-                      class="border-b border-gray-100 mx-4"
-                      style="display: none"
-                    ></div>
-
-                    <!-- Default Examples Section -->
-                    <div
-                      class="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-white px-4 py-2 border-b border-gray-200"
-                    >
-                      <div class="font-semibold text-sm text-blue-800">
-                        Saved Examples
-                      </div>
+                  <!-- Default Examples Section -->
+                  <div
+                    class="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-white px-4 py-2 border-b border-gray-200">
+                    <div class="font-semibold text-sm text-blue-800">
+                      Saved Examples
                     </div>
-                    <div id="default-examples-list" class="py-1">
-                      <!-- Default examples will be populated by JavaScript -->
-                    </div>
+                  </div>
+                  <div id="default-examples-list" class="py-1">
+                    <!-- Default examples will be populated by JavaScript -->
                   </div>
                 </div>
               </div>
-              <div class="relative">
-                <button
-                  id="formula-btn"
-                  class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-                >
-                  Formulas
-                </button>
-                <div
-                  id="formula-menu"
-                  class="menu-dropdown hidden absolute z-10 top-full mt-2 left-0 w-72 bg-white rounded-lg shadow-lg border border-gray-200"
-                >
-                  <div class="max-h-[400px] overflow-y-auto">
-                    <div id="formula-list" class="py-1">
-                      <!-- Formulas will be populated by JavaScript -->
-                    </div>
+            </div>
+            <div class="relative">
+              <button id="formula-btn"
+                class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+                title="Formulas - Insert common mathematical formulas">
+                ∫
+              </button>
+              <div id="formula-menu"
+                class="menu-dropdown hidden absolute z-10 top-full mt-2 left-0 w-72 bg-white rounded-lg shadow-lg border border-gray-200">
+                <div class="max-h-[400px] overflow-y-auto">
+                  <div id="formula-list" class="py-1">
+                    <!-- Formulas will be populated by JavaScript -->
                   </div>
                 </div>
               </div>
-              <button
-                id="export-full-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-blue-100 text-blue-600"
-              >
-                Export Full
-              </button>
-              <button
-                id="export-math-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-green-100 text-green-600"
-              >
-                Export Math
-              </button>
-              <button
-                id="undo-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-              >
-                Undo
-              </button>
-              <button
-                id="redo-btn"
-                class="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-              >
-                Redo
-              </button>
             </div>
+            <button id="export-full-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-blue-100 text-blue-600 flex items-center justify-center"
+              title="Export Full - Export complete LaTeX document">
+              📄
+            </button>
+            <button id="export-math-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-green-100 text-green-600 flex items-center justify-center"
+              title="Export Math - Export only the mathematical expression">
+              📊
+            </button>
+
+            <button id="undo-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+              title="Undo - Undo last action">
+              ↩️
+            </button>
+            <button id="redo-btn"
+              class="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center justify-center"
+              title="Redo - Redo last undone action">
+              ↪️
+            </button>
+
           </div>
 
-          <!-- Math Field -->
-          <math-field
-            id="math-field"
-            smart-fence="true"
-            smart-mode="true"
-            class="w-full min-h-[80px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-          ></math-field>
         </div>
 
-        <!-- Output Sections -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- LaTeX Output -->
-          <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">
-              LaTeX Output
-            </h2>
-            <textarea
-              id="latex-output"
-              class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
-              placeholder="LaTeX will appear here..."
-            ></textarea>
-          </div>
+        <!-- Math Field -->
+        <math-field id="math-field" smart-fence="true" smart-mode="true"
+          class="w-full min-h-[80px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></math-field>
+      </div>
 
-          <!-- MathJSON Output -->
-          <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">
-              MathJSON Output
-            </h2>
-            <div
-              id="mathjson-container"
-              class="p-4 rounded-lg border bg-green-50 border-green-200"
-            >
-              <div class="flex items-center mb-2">
-                <div
-                  id="status-indicator"
-                  class="w-3 h-3 rounded-full mr-2 bg-green-500"
-                ></div>
-                <span
-                  id="status-text"
-                  class="text-sm font-medium text-green-800"
-                  >Valid Expression</span
-                >
-              </div>
-              <div
-                class="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto"
-              >
-                <span id="mathjson-output">[]</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview Section -->
+      <!-- Output Sections -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- LaTeX Output -->
         <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">Live Preview</h2>
-          <div class="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
-            <div
-              id="latex-preview"
-              class="kate-preview-component min-h-[60px] w-full py-4 text-center"
-            >
-              <!-- KaTeX will render here -->
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">
+            LaTeX Output
+          </h2>
+          <textarea id="latex-output"
+            class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
+            placeholder="LaTeX will appear here..."></textarea>
+        </div>
+
+        <!-- MathJSON Output -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">
+            MathJSON Output
+          </h2>
+          <div id="mathjson-container" class="p-4 rounded-lg border bg-green-50 border-green-200">
+            <div class="flex items-center mb-2">
+              <div id="status-indicator" class="w-3 h-3 rounded-full mr-2 bg-green-500"></div>
+              <span id="status-text" class="text-sm font-medium text-green-800">Valid Expression</span>
+            </div>
+            <div class="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
+              <span id="mathjson-output">[]</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Menus (Hidden by default) -->
-      <div id="style-menu" class="hidden"></div>
-      <div id="bg-menu" class="hidden"></div>
-      <div id="insert-menu" class="hidden"></div>
-      <div id="examples-container" class="hidden"></div>
-
-      <!-- Save Dialog Modal -->
-      <div
-        id="save-dialog"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        style="display: none"
-      >
-        <div class="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Save Formula</h3>
-          <div class="mb-4">
-            <label
-              for="save-label-input"
-              class="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Enter a label for your formula:
-            </label>
-            <input
-              type="text"
-              id="save-label-input"
-              placeholder="e.g., My Quadratic Formula"
-              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div class="flex justify-end space-x-3">
-            <button
-              id="save-cancel-btn"
-              class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              id="save-confirm-btn"
-              class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
-            >
-              Save
-            </button>
+      <!-- Preview Section -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Live Preview</h2>
+        <div class="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+          <div id="latex-preview" class="kate-preview-component min-h-[60px] w-full py-4 text-center">
+            <!-- KaTeX will render here -->
           </div>
         </div>
       </div>
     </div>
 
-    <script type="module" src="script.js"></script>
-  </body>
+    <!-- Menus (Hidden by default) -->
+    <div id="style-menu" class="hidden"></div>
+    <div id="bg-menu" class="hidden"></div>
+    <div id="insert-menu" class="hidden"></div>
+    <div id="examples-container" class="hidden"></div>
+
+    <!-- Save Dialog Modal -->
+    <div id="save-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      style="display: none">
+      <div class="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Save Formula</h3>
+        <div class="mb-4">
+          <label for="save-label-input" class="block text-sm font-medium text-gray-700 mb-2">
+            Enter a label for your formula:
+          </label>
+          <input type="text" id="save-label-input" placeholder="e.g., My Quadratic Formula"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button id="save-cancel-btn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            Cancel
+          </button>
+          <button id="save-confirm-btn" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+
 </html>
